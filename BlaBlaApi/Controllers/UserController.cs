@@ -10,6 +10,12 @@ namespace BlaBlaApi.Controllers
     {
         private static List<User> users = new();
 
+        [HttpGet("users")]
+        public IActionResult GetUsers()
+        {
+            return Ok(users);
+        }
+
         [HttpPost("register")]
         public IActionResult Register(RegisterUserDto userDto)
         {

@@ -7,30 +7,43 @@ namespace BlaBlaApi.Controllers
     [Route("api/[controller]")]
     public class PassengerController : ControllerBase
     {
-        private static List<Booking> bookings = new();
-
         [HttpPost("book")]
         public IActionResult BookPlace([FromBody] Booking booking)
         {
-            if (booking == null || booking.Trip.AvailableSeats <= 0)
+            var trip = DataStore.Trips.FirstOrDefault(t => t.Id == booking.Trip.Id);
+            if (trip == null)
+                return NotFound("Поїздка не знайдена");
+
+            var existingBooking = DataStore.Bookings.FirstOrDefault(b =>
+                b.Trip.Id == booking.Trip.Id && b.Passenger.Id == booking.Passenger.Id);
+            if (existingBooking != null)
+                return BadRequest("Пасажир вже забронював цю поїздку");
+
+            if (trip.AvailableSeats <= 0)
                 return BadRequest("Місць немає");
 
             booking.Status = BookingStatus.Pending;
-            bookings.Add(booking);
-            booking.Trip.AvailableSeats--;
+            DataStore.Bookings.Add(booking);
+            trip.AvailableSeats--;
+            trip.Passengers.Add(booking.Passenger);
+
             return Ok(booking);
         }
 
         [HttpPost("cancel/{id}")]
         public IActionResult CancelBooking(string id)
         {
-            var booking = bookings.FirstOrDefault(b => b.Id == id);
+            var booking = DataStore.Bookings.FirstOrDefault(b => b.Id == id);
             if (booking == null) return NotFound();
 
-            if (!booking.Cancel(DateTime.Now))
-                return BadRequest("Скасування можливе лише за 2 години до поїздки");
+            var trip = DataStore.Trips.FirstOrDefault(t => t.Id == booking.Trip.Id);
+            if (trip != null)
+            {
+                trip.Passengers.Remove(booking.Passenger);
+                trip.AvailableSeats++;
+            }
 
-            bookings.Remove(booking);
+            DataStore.Bookings.Remove(booking);
             return Ok();
         }
 

@@ -7,10 +7,8 @@ namespace BlaBlaApi.Controllers
     [Route("api/[controller]")]
     public class TripController : ControllerBase
     {
-        private static List<Trip> trips = new();
-
         [HttpGet]
-        public IActionResult GetAll() => Ok(trips);
+        public IActionResult GetAll() => Ok(DataStore.Trips);
 
         [HttpPost]
         public IActionResult Create([FromBody] Trip trip)
@@ -18,14 +16,14 @@ namespace BlaBlaApi.Controllers
             if (trip.Date < DateTime.Now)
                 return BadRequest("Дата в минулому");
 
-            trips.Add(trip);
+            DataStore.Trips.Add(trip);
             return Ok(trip);
         }
 
         [HttpPut("{id}")]
         public IActionResult Edit(string id, [FromBody] Trip updated)
         {
-            var trip = trips.FirstOrDefault(t => t.Id == id);
+            var trip = DataStore.Trips.FirstOrDefault(t => t.Id == id);
             if (trip == null) return NotFound();
 
             trip.From = updated.From;
@@ -40,11 +38,11 @@ namespace BlaBlaApi.Controllers
         [HttpDelete("{id}")]
         public IActionResult Delete(string id)
         {
-            var trip = trips.FirstOrDefault(t => t.Id == id);
+            var trip = DataStore.Trips.FirstOrDefault(t => t.Id == id);
             if (trip == null || trip.Passengers.Count > 0)
                 return BadRequest("Неможливо скасувати поїздку");
 
-            trips.Remove(trip);
+            DataStore.Trips.Remove(trip);
             return Ok();
         }
     }
